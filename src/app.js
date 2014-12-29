@@ -1,13 +1,22 @@
 var app = {
+  debug: true,		
   init: function () {
 	cc.director.runScene(new Map());
+  },
+  
+  localX: function (x) {
+	return x  
+  },
+  
+  localY: function (y) {
+	return y  
   },
   
   preparePathPoints: function (path) {
 	  var points = [];
 	  var i = 0;
 	  while (i < path.length) {
-		  points.push(cc.p(app.localX(path[i]), app.localY(1536 - path[i + 1])));	
+		  points.push(cc.p(app.localX(path[i]), app.localY(path[i + 1])));	
 		  i += 2;
 	  }	
 	  return points;
@@ -43,11 +52,24 @@ var app = {
 	  }
   },
 
+  
+  /**
+   * Вычисляет растояние между 2 точками с координатами.
+   * @param x1
+   * @param y1
+   * @param x2
+   * @param y2
+   * @return {Number}
+   */
+  getDistance: function (x1, y1, x2, y2) {
+  	return (Math.pow((Math.pow((x2 - x1), 2) +  Math.pow((y2 - y1), 2)), 0.5));
+  },
+  
   //Вычисляет длинну маршрута
   getPathDistance: function (path) {
 	  var s = 0;
 	  for (var i = 0; i < Math.floor(path.length/4)*4; i +=2) {
-		  var d = getDistance(path[i], path[i + 1], path[i + 2], path[i + 3]);
+		  var d = this.getDistance(path[i], path[i + 1], path[i + 2], path[i + 3]);
   		s += (!isNaN(parseFloat(d)))?d:0;
   	}
   	return s;
@@ -64,17 +86,22 @@ var app = {
 	  return s;
   },
   
-  moveByPathConstant: function (path, sprite, time, onSuccess) {
+  moveByPathConstant: function (path, sprite, time, onSuccess, dir) {
 	  var pathLength = this.getPathPointsDistance(path);
 	  var pathSpeed  = pathLength/time;
 	  var moves = [];
 	  var prevLocation = sprite.getPosition();
 	  for (var i = 0; i < path.length; i++) {
+		  
 		var d = getDistance(prevLocation.x, prevLocation.y, path[i].x, path[i].y);
 		var t = d/pathSpeed;
-		var alpha = Math.atan2(-path[i].y + prevLocation.y, path[i].x - prevLocation.x)*(180/Math.PI) + 90;
-		//cc.log('alpha[' + i + '] = ' + alpha);
-		moves.push(new cc.RotateTo(0, alpha, alpha));
+		if (dir !== false) {
+			var alpha = Math.atan2(-path[i].y + prevLocation.y, path[i].x - prevLocation.x)*(180/Math.PI) + 90;
+			//cc.log('alpha[' + i + '] = ' + alpha);
+			moves.push(new cc.RotateTo(0, alpha, alpha));	
+		}
+		
+		
 		moves.push(cc.moveTo(t, path[i]));
 		prevLocation = path[i];
 	  }
@@ -85,11 +112,10 @@ var app = {
 	  }));
 	  sprite.runAction(new cc.Sequence(moves));  
   },
-  
-  moveByPathConstantSpeed : function (path, sprite, speed, onSuccess) {
+  moveByPathConstantSpeed : function (path, sprite, speed, onSuccess, dir) {
 	var pathLength = this.getPathPointsDistance(path); 
 	var time = pathLength/speed;
-	this.moveByPathConstant(path, sprite, time, onSuccess);
+	this.moveByPathConstant(path, sprite, time, onSuccess, dir);
   },
   
 }

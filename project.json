@@ -10,6 +10,7 @@
         "cocos2d"
     ],
     "jsList":[
+        "src/lib/tools.js",
         "src/scene/map.js",
         "src/resource.js",
         "src/app.js"
