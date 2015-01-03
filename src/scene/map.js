@@ -82,12 +82,12 @@ var Map = cc.Scene.extend({
 					app.drawPath(this.drawLayer, app.preparePathPoints([this.path[this.path.length-4], this.path[this.path.length-3],this.path[this.path.length-2], this.path[this.path.length-1]]));  
 				  }
 				} else {
-				  cc.log('simple click');
-				  this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + getRandomInt(2, 12));
+				  //cc.log('simple click');
+				  /*this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + getRandomInt(2, 12));
 				  this.currentPlayer++;
 				  if (this.currentPlayer > (this.players.length-1)) {
 					  this.currentPlayer = 0;  
-				  }
+				  }*/
 				}
 			  }
 			  this.TouchMoved = false;
@@ -134,11 +134,11 @@ var Map = cc.Scene.extend({
 	  for (var i = 0; i < this.players.length; i++) {
 		  if (this.players[i].step == step) {
 			  ps.push(this.players[i]);	
-		}  
+		  }  
 	  }		
 	  return ps;
 	},
-	movePlayer: function (player, step) {
+	movePlayer: function (player, step, onSuccess) {
 		var p = this.players[player];
 		var prevStep = (p.step == undefined)?1:p.step;
 		p.step = step;
@@ -159,51 +159,51 @@ var Map = cc.Scene.extend({
 
 		}
 		cc.log(path.length);
+		
 		if (path.length > 1) {
 			app.moveByPathConstantSpeed(path, p, speed, function () {
 				if (this.findPlayerInStep(step).length > 1) {
+					
+				    p.runAction(new cc.Sequence([
+					                             new cc.RotateTo(time/2, 180, 180),
+					                             new cc.RotateTo(time/2, 360, 360)
+					                             ]));
 					p.runAction(new cc.Sequence([
-						                             new cc.RotateTo(time/2, 180, 180),
-						                             new cc.RotateTo(time/2, 360, 360)
-						                             ]));
-					  p.runAction(new cc.Sequence([
-					                               new cc.Sequence([
-			                                         new cc.ScaleTo(0.5, 0.5),
-			                                         new cc.MoveTo(0.5, this.getStepPos(this.gamePos(step+1), this.findPlayerInStep(step).length))                 
+					                             new cc.Sequence([
+					                                                new cc.ScaleTo(0.5, 0.8),
+					                                                new cc.MoveTo(0.5, this.getStepPos(this.gamePos(step+1), this.findPlayerInStep(step).length))                 
 					                                                ])
-					  ]));
-				  }
-		  }.bind(this), false);  
-	    } else {
-		  if (this.findPlayerInStep(step).length > 1) {
-			  p.runAction(new cc.Sequence([
+					                               ]));
+				}
+				setTimeout(function () {
+					this.showNextTurn({
+						onTurn: function (steps) {
+							this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps-1));
+							this.currentPlayer++;
+							if (this.currentPlayer > (this.players.length-1)) {
+								this.currentPlayer = 0;  
+							}
+						}.bind(this)
+					});		
+				}.bind(this), 1000);
+			}.bind(this), false);  
+		} else {
+			if (this.findPlayerInStep(step).length > 1) {
+				p.runAction(new cc.Sequence([
 				                             new cc.RotateTo(time/2, 180, 180),
 				                             new cc.RotateTo(time/2, 360, 360)
 				                             ]));
-			  p.runAction(new cc.Sequence([
-			                               new cc.Sequence([
-	                                         new cc.ScaleTo(0.5, 0.5),
-	                                         new cc.MoveTo(0.5, this.getStepPos(pos, this.findPlayerInStep(step).length))                 
-			                                                ])
-			  ]));
-		  }  
+				p.runAction(new cc.Sequence([
+				                             new cc.Sequence([
+				                                              new cc.ScaleTo(0.5, 0.8),
+				                                              new cc.MoveTo(0.5, this.getStepPos(pos, this.findPlayerInStep(step).length))                 
+				                                              ])
+				                             ]));
+			}  
 	    }
 	  
 	  
-	  /*if (this.findPlayerInStep(step).length > 1) {
-		  //p.runAction(new cc.ScaleTo(0.5, 0.5)); 
-		  p.runAction(new cc.Sequence([
-		                               new cc.MoveTo(time, pos),
-		                               new cc.Sequence([
-                                         new cc.ScaleTo(0.5, 0.5),
-                                         new cc.MoveTo(0.5, this.getStepPos(pos, this.findPlayerInStep(step).length))                 
-		                                                ])
-		                               
-		  ]));
-	  } else {
-		p.runAction(new cc.ScaleTo(0.5, 1));  
-		p.runAction(new cc.MoveTo(time, pos));  
-	  }*/
+	 
 	   
 	  
 	  
@@ -214,18 +214,238 @@ var Map = cc.Scene.extend({
 		y: pos.y - 40*Math.sin(n*(-2*Math.PI/6)),
 	  });	
 	},
+	countPlayers: 1,
+	players: [],
+	currentPlayer: 0,
     game: function() {
-      var countPlayers = 6;
-      countPlayers = (countPlayers>6)?6:countPlayers; 
+      var playersImg = [
+        'p1',
+        'p2',
+        'p3',
+        'p4',
+        'p5',
+        'p6'
+      ]; 	
+      playersImg.shuffle();
+      
+    	
       this.players = [];
       this.currentPlayer = 0;
-      for (var i = 0; i < countPlayers; i++) {
-    	var p = new cc.Sprite('res/player/p' + (i+1) + '.png');
-    	this.drawLayer.addChild(p);
-    	p.setPosition(this.gamePos(1));
-    	this.players.push(p);
-    	this.movePlayer(i, 1);
-      }
+      this.countPlayers = 1;
+      this.showIntro({
+    	  onStart: function () {
+    		cc.log('Start game');
+    		for (var i = 0; i < this.countPlayers; i++) {
+    			var p = new cc.Sprite('res/player/' + playersImg[i] + '.png');
+    			p.imgName = 'res/player/' + playersImg[i] + '.png';
+    			this.drawLayer.addChild(p);
+    			p.setPosition(this.gamePos(1));
+    			this.players.push(p);
+    			this.movePlayer(i, 1);
+    		}
+    		setTimeout(function () {
+    			this.showNextTurn({
+    				onTurn: function (steps) {
+    					this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps-1));
+    					this.currentPlayer++;
+    					if (this.currentPlayer > (this.players.length-1)) {
+    						this.currentPlayer = 0;  
+    					}
+    				}.bind(this)
+    			});	
+    		}.bind(this), 1000);
+    	  }.bind(this)  
+      });
       
+      
+    },
+    
+    initMenu: function () {
+      if (typeof(this.backMenu) == 'undefined') {
+    	  this.backMenu = new cc.Sprite('res/menu-board.png');
+          this.backMenu.attr({
+        	x: (cc.view.getDesignResolutionSize().width - this.backMenu.width - 50),
+        	y: (cc.view.getDesignResolutionSize().height - this.backMenu.height + 50),
+        	opacity: 190
+          });
+          this.addChild(this.backMenu); 
+      } else {
+    	this.backMenu.attr({
+    	   visible: true
+    	}); 
+      }
+      this.backMenu.removeAllChildren(true);
+    },
+    
+    showIntro: function (options) {
+      this.initMenu();	
+      
+      var line = new cc.LabelTTF(
+    		  'Путешествуйте вокруг света.',
+    		  'Times New Roman',
+			  34
+	  );
+      line.setPosition(this.backMenu.width/2, this.backMenu.height - 34);
+	  line.setAnchorPoint(0.5, 1);
+	  line.setColor(cc.color(0, 0, 0, 255));
+	  this.backMenu.addChild(line);
+	  
+	  var line = new cc.LabelTTF(
+    		  'В игре могут участвовать от 1 до 6 игроков.',
+    		  'Times New Roman',
+			  24
+	  );
+	  line.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50);
+	  line.setAnchorPoint(0.5, 1);
+	  line.setColor(cc.color(0, 0, 0, 255));
+	  this.backMenu.addChild(line);
+	  
+	  var line = new cc.LabelTTF(
+			  'Побеждает тот игрок, который первый закончит',
+    		  'Times New Roman',
+			  24
+	  );
+      line.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34);
+	  line.setAnchorPoint(0.5, 1);
+	  line.setColor(cc.color(0, 0, 0, 255));
+	  this.backMenu.addChild(line);
+
+	  var line = new cc.LabelTTF(
+			  'путишествие! Удачи!',
+			  'Times New Roman',
+			  24
+	  );
+	  line.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34 - 34);
+	  line.setAnchorPoint(0.5, 1);
+	  line.setColor(cc.color(0, 0, 0, 255));
+	  this.backMenu.addChild(line);
+
+
+	  this.countPlayersLine = new cc.LabelTTF(
+			  'Игроков 1',
+			  'Times New Roman',
+			  30
+	  );
+	  this.countPlayersLine.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34 - 80);
+	  this.countPlayersLine.setAnchorPoint(0.5, 1);
+	  this.countPlayersLine.setColor(cc.color(0, 0, 0, 255));
+	  this.backMenu.addChild(this.countPlayersLine);
+	  
+	  
+	  
+	  var countPlayers = new ccui.Slider();
+	  countPlayers.setTouchEnabled(true);
+	  
+	  countPlayers.loadBarTexture("res/slider/sliderTrack.png");
+	  countPlayers.loadSlidBallTextures("res/slider/sliderThumb.png", "res/slider/sliderThumb.png", "");
+	  countPlayers.loadProgressBarTexture("res/slider/sliderProgress.png");
+
+	  countPlayers.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34 - 34 - 120);
+	  countPlayers.addEventListener(function (sender, type) { 
+		  switch (type) {
+		  case ccui.Slider.EVENT_PERCENT_CHANGED:
+			  var slider = sender;
+			  var percent = slider.getPercent();
+			  this.countPlayers = Math.round(percent/(100/5)) + 1;
+			  this.countPlayersLine.setString("Игроков " + this.countPlayers);
+			  break;
+		  default:
+			  break;
+		  }
+	  }, this);
+	  this.backMenu.addChild(countPlayers);
+	  
+	  var button = new ccui.ImageView();
+	  button.setTouchEnabled(true);
+	  button.loadTexture('res/menu-button-start.png');
+	  button.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34 - 34 - 120 - 70);
+	  button.addTouchEventListener(function (sender, type) { 
+		  switch (type) {
+		  case ccui.Widget.TOUCH_ENDED: {
+			  this.backMenu.attr({
+				  visible: false
+			  });  	
+			  if (typeof(options.onStart) == 'function') {
+				  options.onStart();  
+			  } 
+			  break;
+		  }
+		  default:
+			  break;
+		  }
+	  }, this);
+	  this.backMenu.addChild(button);
+    },
+    
+    showNextTurn: function (options) {
+    	this.initMenu();
+
+    	var line = new cc.LabelTTF(
+       		  'Ходит игрок',
+       		  'Times New Roman',
+   			  34
+   	    );
+        line.setPosition(this.backMenu.width/2, this.backMenu.height - 34);
+   	    line.setAnchorPoint(0.5, 1);
+   	    line.setColor(cc.color(0, 0, 0, 255));
+   	    this.backMenu.addChild(line);
+    	
+   	    var playerImg = new cc.Sprite(this.players[this.currentPlayer].imgName);
+   	    playerImg.attr({
+   	      scale: 1.5	
+   	    });
+   	    playerImg.setPosition(this.backMenu.width/2, this.backMenu.height - 80);
+   	    playerImg.setAnchorPoint(0.5, 1);
+	    this.backMenu.addChild(playerImg);
+   	    
+   	    var numbers = new cc.Sprite('res/numbers/0.png');
+   	    numbers.n = 0;
+   	    numbers.setPosition(this.backMenu.width/2, this.backMenu.height - 150);
+   	    numbers.setAnchorPoint(0.5, 1);
+   	    this.backMenu.addChild(numbers);
+   	    
+
+    	var button = new ccui.ImageView();
+    	button.setTouchEnabled(true);
+    	button.loadTexture('res/menu-button-turn.png');
+	    button.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34 - 34 - 120 - 70);
+	    button.addTouchEventListener(function (sender, type) { 
+		  switch (type) {
+		    case ccui.Widget.TOUCH_ENDED: {
+		      
+		    	
+		   	  var numbersInterval = setIntervalG(function () {
+		     	      //numbers.n = getRandomInt(1, 12);
+		     	      numbers.n++;
+		     	      if (numbers.n > 12) numbers.n = 1;
+		     	      numbers.setTexture('res/numbers/' + numbers.n + '.png');
+		      }.bind(this), 100);
+              setTimeout(function () {
+            	clearInterval(numbersInterval);  
+            	numbers.n = getRandomInt(1, 12);
+            	numbers.setTexture('res/numbers/' + numbers.n + '.png');
+            	setTimeout(function () {
+            		this.backMenu.attr({
+    		    	  visible: false
+    		        });
+            		if (typeof(options.onTurn) == 'function') {
+          		      options.onTurn(numbers.n);  
+          		    }	
+            	}.bind(this), 2000);
+              }.bind(this), 5000); 
+		    	
+		       	
+		       
+		      break;
+		    }
+		    default:
+			  break;
+		  }
+	  }, this);
+	  this.backMenu.addChild(button);
+    },
+    
+    showFinal: function (options) {
+      this.initMenu();	
     }
 });
