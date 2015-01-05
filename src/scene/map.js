@@ -42,19 +42,29 @@ var Map = cc.Scene.extend({
 			  //Move the position of current button sprite
 			  var target = event.getCurrentTarget();
 			  var delta = touch.getDelta();
+			  
+			  delta = this.checkBorder(this.map.getPosition(), delta);
+			  
 			  var pos = cc.p(
 					  this.map.getPosition().x + delta.x,
 					  this.map.getPosition().y + delta.y
 			  );
-			  if (this.checkBorder(pos)) {
-				this.map.setPosition(pos); 
-				this.drawLayer.setPosition(cc.p(
-						this.drawLayer.getPosition().x + delta.x,
-						this.drawLayer.getPosition().y + delta.y
-				));
-			  }
+			  this.map.setPosition(pos);
+			  
+			  
+			  var pos = cc.p(
+					  this.drawLayer.getPosition().x + delta.x,
+					  this.drawLayer.getPosition().y + delta.y
+			  );
+			  this.drawLayer.setPosition(pos);
+			  
 		  }.bind(this),
-		  onTouchEnded: function (touch, event) {      
+		  onTouchEnded: function (touch, event) {
+			  /*var m = this.map.getPosition();
+			  
+			  cc.log('Map x = ' + m.x);
+			  cc.log('Map y = ' + m.y);*/
+			  
 			  if (this.TouchMoved !== true) {
 				var m = this.map.getPosition();
 				var d = cc.p({
@@ -109,9 +119,9 @@ var Map = cc.Scene.extend({
 		  }	 
 	  }.bind(this));  
 	},
-	checkBorder: function (pos) {
+	checkBorder: function (pos, delta) {
 	  //cc.log(pos.y);	
-	  if ( 
+	 /* if ( 
 		  (pos.y < -(this.map.getContentSize().height - cc.view.getDesignResolutionSize().height)) 
 	       || (pos.y > 0)
 	  )  
@@ -125,6 +135,21 @@ var Map = cc.Scene.extend({
 		 return false;
 	  }
 	  return true;
+	  */
+		
+	  if ((pos.y + delta.y) < -(this.map.getContentSize().height - cc.view.getVisibleSize().height)) {
+		delta.y = 0; 
+	  }
+	  if ((pos.y + delta.y) > 0) {
+		delta.y = 0; 
+	  }
+	  if ((pos.x + delta.x) < -(this.map.getContentSize().width - cc.view.getVisibleSize().width)) { 
+ 	    delta.x = 0;
+	  }
+	  if ((pos.x + delta.x) > 0) { 
+	    delta.x = 0;
+	  }
+	  return delta;
 	},
 	gamePos: function (pos) {
 	  return this.gamePath[pos-1];	
@@ -158,7 +183,7 @@ var Map = cc.Scene.extend({
 			path.push(this.gamePath[i]);
 
 		}
-		cc.log(path.length);
+		//cc.log(path.length);
 		
 		if (path.length > 1) {
 			app.moveByPathConstantSpeed(path, p, speed, function () {
@@ -170,15 +195,15 @@ var Map = cc.Scene.extend({
 					                             ]));
 					p.runAction(new cc.Sequence([
 					                             new cc.Sequence([
-					                                                new cc.ScaleTo(0.5, 0.8),
-					                                                new cc.MoveTo(0.5, this.getStepPos(this.gamePos(step+1), this.findPlayerInStep(step).length))                 
-					                                                ])
-					                               ]));
+					                                              new cc.ScaleTo(0.5, 0.8),
+					                                              new cc.MoveTo(0.5, this.getStepPos(this.gamePos(step+1), this.findPlayerInStep(step).length))                 
+					                                              ])
+					                             ]));
 				}
 				setTimeout(function () {
 					this.showNextTurn({
 						onTurn: function (steps) {
-							this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps-1));
+							this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps));
 							this.currentPlayer++;
 							if (this.currentPlayer > (this.players.length-1)) {
 								this.currentPlayer = 0;  
@@ -186,7 +211,36 @@ var Map = cc.Scene.extend({
 						}.bind(this)
 					});		
 				}.bind(this), 1000);
-			}.bind(this), false);  
+			}.bind(this), false, 
+			function (point) {
+				
+			  cc.log('+-+');
+			  
+			  /*
+		      cc.log((-1)*this.map.x);
+		      cc.log(point.x);
+		      cc.log((-1)*this.map.x + cc.view.getVisibleSize().width);
+		      //*/
+				
+			  
+			  cc.log((this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y);
+		      cc.log(point.y);
+		      cc.log((this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y + cc.view.getVisibleSize().height);
+		      //*/
+			  
+			  if (
+				   (point.x >= (-1)*this.map.x)
+				   && (point.x <= (-1)*this.map.x + cc.view.getVisibleSize().width)
+				   && (point.y >= (this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y)
+				   && (point.y <= (this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y + cc.view.getVisibleSize().height)
+			     ) {
+                cc.log('true');				  
+			  } else {
+				cc.log('false');  
+			  }
+			  
+			}.bind(this)
+		  );  
 		} else {
 			if (this.findPlayerInStep(step).length > 1) {
 				p.runAction(new cc.Sequence([
@@ -261,12 +315,15 @@ var Map = cc.Scene.extend({
     },
     
     initMenu: function () {
+      	
       if (typeof(this.backMenu) == 'undefined') {
     	  this.backMenu = new cc.Sprite('res/menu-board.png');
           this.backMenu.attr({
-        	x: (cc.view.getDesignResolutionSize().width - this.backMenu.width - 50),
-        	y: (cc.view.getDesignResolutionSize().height - this.backMenu.height + 50),
-        	opacity: 190
+        	  x: (cc.view.getVisibleSize().width)/2,
+        	  y: (cc.view.getVisibleSize().height)/2,
+        	  anchorX: 0.5,
+        	  anchorY: 0.5,
+        	  opacity: 190
           });
           this.addChild(this.backMenu); 
       } else {
@@ -432,7 +489,7 @@ var Map = cc.Scene.extend({
           		      options.onTurn(numbers.n);  
           		    }	
             	}.bind(this), 2000);
-              }.bind(this), 5000); 
+              }.bind(this), 2000); 
 		    	
 		       	
 		       

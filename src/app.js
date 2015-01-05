@@ -86,7 +86,7 @@ var app = {
 	  return s;
   },
   
-  moveByPathConstant: function (path, sprite, time, onSuccess, dir) {
+  moveByPathConstant: function (path, sprite, time, onSuccess, dir, onPoint) {
 	  var pathLength = this.getPathPointsDistance(path);
 	  var pathSpeed  = pathLength/time;
 	  var moves = [];
@@ -100,8 +100,16 @@ var app = {
 			//cc.log('alpha[' + i + '] = ' + alpha);
 			moves.push(new cc.RotateTo(0, alpha, alpha));	
 		}
-		
-		
+        if (typeof(onPoint) == 'function') {
+        	//cc.log('...');
+        	moves.push(cc.callFunc(function (point) {
+        		if (typeof(onPoint) == 'function') {
+        		  /*cc.log(point.x);
+        		  cc.log(point.y);*/
+        		  onPoint(point);		
+        		}  
+        	}, this,  path[i]));        	
+        }  		
 		moves.push(cc.moveTo(t, path[i]));
 		prevLocation = path[i];
 	  }
@@ -112,10 +120,10 @@ var app = {
 	  }));
 	  sprite.runAction(new cc.Sequence(moves));  
   },
-  moveByPathConstantSpeed : function (path, sprite, speed, onSuccess, dir) {
+  moveByPathConstantSpeed : function (path, sprite, speed, onSuccess, dir, onPoint) {
 	var pathLength = this.getPathPointsDistance(path); 
 	var time = pathLength/speed;
-	this.moveByPathConstant(path, sprite, time, onSuccess, dir);
+	this.moveByPathConstant(path, sprite, time, onSuccess, dir, onPoint);
   },
   
 }
