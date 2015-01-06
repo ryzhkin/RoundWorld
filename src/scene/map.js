@@ -19,52 +19,14 @@ var Map = cc.Scene.extend({
 		  event: cc.EventListener.TOUCH_ONE_BY_ONE,
 		  // When "swallow touches" is true, then returning 'true' from the onTouchBegan method will "swallow" the touch event, preventing other listeners from using it.
 		  swallowTouches: true,
-		  //onTouchBegan event callback function                      
 		  onTouchBegan: function (touch, event) { 
-			  /* var target = event.getCurrentTarget();  
-			  var s = target.getContentSize();
-			  var rect = cc.rect(0, 0, s.width, s.height);
-
-			  //Get the position of the current point relative to the button
-			  var locationInNode = target.convertToNodeSpace(touch.getLocation());    
-			  //Check the click area
-			  if (cc.rectContainsPoint(rect, locationInNode)) {       
-				  //cc.log("sprite began... x = " + locationInNode.x + ", y = " + locationInNode.y);
-				  area.click(target);
-				  return true;
-			  }
-			  return false;*/
 			  return true;
 		  },
-		  //Trigger when moving touch
 		  onTouchMoved: function (touch, event) {   
 			  this.TouchMoved = true;
-			  //Move the position of current button sprite
-			  var target = event.getCurrentTarget();
-			  var delta = touch.getDelta();
-			  
-			  delta = this.checkBorder(this.map.getPosition(), delta);
-			  
-			  var pos = cc.p(
-					  this.map.getPosition().x + delta.x,
-					  this.map.getPosition().y + delta.y
-			  );
-			  this.map.setPosition(pos);
-			  
-			  
-			  var pos = cc.p(
-					  this.drawLayer.getPosition().x + delta.x,
-					  this.drawLayer.getPosition().y + delta.y
-			  );
-			  this.drawLayer.setPosition(pos);
-			  
+			  this.moveMapDelta(touch.getDelta());
 		  }.bind(this),
 		  onTouchEnded: function (touch, event) {
-			  /*var m = this.map.getPosition();
-			  
-			  cc.log('Map x = ' + m.x);
-			  cc.log('Map y = ' + m.y);*/
-			  
 			  if (this.TouchMoved !== true) {
 				var m = this.map.getPosition();
 				var d = cc.p({
@@ -92,7 +54,8 @@ var Map = cc.Scene.extend({
 					app.drawPath(this.drawLayer, app.preparePathPoints([this.path[this.path.length-4], this.path[this.path.length-3],this.path[this.path.length-2], this.path[this.path.length-1]]));  
 				  }
 				} else {
-				  //cc.log('simple click');
+				  cc.log('simple click');
+				  //this.moveMapPos(17);
 				  /*this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + getRandomInt(2, 12));
 				  this.currentPlayer++;
 				  if (this.currentPlayer > (this.players.length-1)) {
@@ -107,11 +70,15 @@ var Map = cc.Scene.extend({
 	  
 	  this.drawLayer = new cc.Layer();
 	  this.addChild(this.drawLayer);
+
 	  
 	  
 	  cc.loader.loadJson('res/game.json', function(error, data){
 		  //cc.log(data.path);
 		  this.gamePath = app.preparePathPoints(data.path);
+		  for (var i = 0; i < this.gamePath.length; i++) {
+			 this.gamePath[i].inex = i; 
+		  }
 		  this.editMap = false;
 		  if (app.debug && this.editMap == false) {
 			//app.drawPath(this.drawLayer, app.preparePathPoints(data.path));
@@ -119,41 +86,110 @@ var Map = cc.Scene.extend({
 		  }	 
 	  }.bind(this));  
 	},
-	checkBorder: function (pos, delta) {
-	  //cc.log(pos.y);	
-	 /* if ( 
-		  (pos.y < -(this.map.getContentSize().height - cc.view.getDesignResolutionSize().height)) 
-	       || (pos.y > 0)
-	  )  
-	  {
-		  return false; 
-	  }	
-	  if (
-		   (pos.x > 0)
-		   || (pos.x < -(this.map.getContentSize().width - cc.view.getDesignResolutionSize().width))
-		 ) {
-		 return false;
-	  }
-	  return true;
-	  */
+	
+	addDot: function (p) {
+	  var dot = new cc.DrawNode();
+	  this.drawLayer.addChild(dot);
+	  dot.drawDot(p, 10, cc.color(242, 120, 14, 255));
+	},
+	logP: function (p) {
+	  cc.log('x = ' + p.x);
+	  cc.log('y = ' + p.y);
+	},
+	
+	// Сдвинуть карту на смещение delta
+	moveMapDelta: function (delta, anim, speed) {
+		delta = this.checkBorder(this.map.getPosition(), delta);
+		if (anim == true) {
+			var speed = (typeof(speed) == 'undefined')?300:speed;
+			var d = app.getDistance(this.map.getPosition().x, this.map.getPosition().y, this.map.getPosition().x + delta.x, this.map.getPosition().y + delta.y);
+			var t = d/speed;
+			this.map.runAction(
+			   new cc.MoveTo(t, 
+				  cc.p(
+					this.map.getPosition().x + delta.x,
+					this.map.getPosition().y + delta.y
+			      )
+			   )
+			);
+			
+			this.drawLayer.runAction(
+					new cc.MoveTo(t, 
+							cc.p(
+									this.drawLayer.getPosition().x + delta.x,
+									this.drawLayer.getPosition().y + delta.y
+							)
+					)
+			);
+		} else {
+			this.map.setPosition(
+					cc.p(
+							this.map.getPosition().x + delta.x,
+							this.map.getPosition().y + delta.y
+					)
+			);
+			this.drawLayer.setPosition(
+					cc.p(
+							this.drawLayer.getPosition().x + delta.x,
+							this.drawLayer.getPosition().y + delta.y
+					)		
+			);	
+		}
 		
-	  if ((pos.y + delta.y) < -(this.map.getContentSize().height - cc.view.getVisibleSize().height)) {
-		delta.y = 0; 
+	},
+	
+	// Сдвинуть карту к координатам в системе кординат краты
+	moveMap: function (pos, anim, speed) {
+	 var delta = cc.p({
+	   x: (-1)*(this.map.x - pos.x),
+	   y: (-1)*(this.map.y - pos.y)
+	 });	
+	 this.moveMapDelta(delta, anim, speed);
+	},
+	
+	// Передвинутся к игровой позиции
+	moveMapPos: function (pos) {
+	  var r = 150;	
+	  var p0 = this.gamePos(pos + 1);
+	  //this.logP(p0);
+	  //this.addDot(p0);
+	  
+	  var p = cc.p({
+		  x: p0.x - r,
+		  y: p0.y - r
+	  });
+
+	  var p1 = this.convertNormalPosToMap(p);
+	  //this.logP(p1);
+		  
+	  this.moveMap(p1, true);	
+	},
+
+
+	checkBorder: function (pos, delta) {
+		if ((pos.y + delta.y) < -(this.map.getContentSize().height - cc.view.getVisibleSize().height)) {
+			//delta.y = 0;
+		  delta.y = -(this.map.getContentSize().height - cc.view.getVisibleSize().height) - pos.y;
 	  }
 	  if ((pos.y + delta.y) > 0) {
-		delta.y = 0; 
+		//delta.y = 0;
+		  delta.y = (-1)*pos.y;
 	  }
 	  if ((pos.x + delta.x) < -(this.map.getContentSize().width - cc.view.getVisibleSize().width)) { 
- 	    delta.x = 0;
+ 	    //delta.x = 0;
+		  delta.x = -(this.map.getContentSize().width - cc.view.getVisibleSize().width) - pos.x;
 	  }
 	  if ((pos.x + delta.x) > 0) { 
-	    delta.x = 0;
+	    //delta.x = 0;
+		  delta.x = (-1)*pos.x;
 	  }
 	  return delta;
 	},
+	
 	gamePos: function (pos) {
 	  return this.gamePath[pos-1];	
 	},
+	
 	findPlayerInStep: function (step) {
 	  var ps = [];	
 	  for (var i = 0; i < this.players.length; i++) {
@@ -163,6 +199,7 @@ var Map = cc.Scene.extend({
 	  }		
 	  return ps;
 	},
+	
 	movePlayer: function (player, step, onSuccess) {
 		var p = this.players[player];
 		var prevStep = (p.step == undefined)?1:p.step;
@@ -181,7 +218,6 @@ var Map = cc.Scene.extend({
 		var path = [];
 		for (var i = prevStep; i <= p.step; i++) {
 			path.push(this.gamePath[i]);
-
 		}
 		//cc.log(path.length);
 		
@@ -213,31 +249,21 @@ var Map = cc.Scene.extend({
 				}.bind(this), 1000);
 			}.bind(this), false, 
 			function (point) {
-				
-			  cc.log('+-+');
-			  
-			  /*
-		      cc.log((-1)*this.map.x);
-		      cc.log(point.x);
-		      cc.log((-1)*this.map.x + cc.view.getVisibleSize().width);
-		      //*/
-				
-			  
-			  cc.log((this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y);
-		      cc.log(point.y);
-		      cc.log((this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y + cc.view.getVisibleSize().height);
-		      //*/
-			  
-			  if (
-				   (point.x >= (-1)*this.map.x)
-				   && (point.x <= (-1)*this.map.x + cc.view.getVisibleSize().width)
-				   && (point.y >= (this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y)
-				   && (point.y <= (this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + this.map.y + cc.view.getVisibleSize().height)
-			     ) {
-                cc.log('true');				  
-			  } else {
-				cc.log('false');  
-			  }
+				//cc.log(point.inex);
+				var m = this.convertMapPosToNormal(this.map.getPosition());
+				if (
+						   (point.x >= m.x)
+						   && (point.x <= m.x + cc.view.getVisibleSize().width)
+						   && (point.y >= m.y)
+						   && (point.y <= m.y + cc.view.getVisibleSize().height)
+					     ) {
+		                cc.log('true');				  
+					  } else {
+						cc.log('false');
+						//this.moveMap(this.convertNormalPosToMap(point));
+						this.moveMapPos(point.inex);
+						
+					  }	
 			  
 			}.bind(this)
 		  );  
@@ -255,12 +281,20 @@ var Map = cc.Scene.extend({
 				                             ]));
 			}  
 	    }
-	  
-	  
-	 
-	   
-	  
-	  
+	},
+	convertMapPosToNormal: function (p) {
+	  var mp  = cc.p({
+		x: (-1)*p.x,
+		y: (this.map.getContentSize().height - cc.view.getDesignResolutionSize().height) + p.y
+	  });	
+	  return mp;
+	},
+	convertNormalPosToMap: function (p) {
+	  var mp = cc.p({
+		x: (-1)*p.x,
+		y: this.start.y - p.y
+	  });	
+	  return mp;
 	},
 	getStepPos: function (pos, n) {
 	  return cc.p({
@@ -282,7 +316,8 @@ var Map = cc.Scene.extend({
       ]; 	
       playersImg.shuffle();
       
-    	
+      //this.moveMapPos(7);
+      
       this.players = [];
       this.currentPlayer = 0;
       this.countPlayers = 1;

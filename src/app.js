@@ -92,7 +92,7 @@ var app = {
 	  var moves = [];
 	  var prevLocation = sprite.getPosition();
 	  for (var i = 0; i < path.length; i++) {
-		  
+		//cc.log(path[i].inex);  
 		var d = getDistance(prevLocation.x, prevLocation.y, path[i].x, path[i].y);
 		var t = d/pathSpeed;
 		if (dir !== false) {
@@ -102,13 +102,17 @@ var app = {
 		}
         if (typeof(onPoint) == 'function') {
         	//cc.log('...');
-        	moves.push(cc.callFunc(function (point) {
+        	moves.push(cc.callFunc(function (p, p2) {
         		if (typeof(onPoint) == 'function') {
-        		  /*cc.log(point.x);
-        		  cc.log(point.y);*/
-        		  onPoint(point);		
+        		  //app.log(p2);	
+        		  //cc.log(point.inex);
+        		  /*	
+        		  cc.log(point.x);
+        		  cc.log(point.y);
+        		  //*/
+        		  onPoint(p2);		
         		}  
-        	}, this,  path[i]));        	
+        	}, this, path[i]));        	
         }  		
 		moves.push(cc.moveTo(t, path[i]));
 		prevLocation = path[i];
@@ -125,5 +129,16 @@ var app = {
 	var time = pathLength/speed;
 	this.moveByPathConstant(path, sprite, time, onSuccess, dir, onPoint);
   },
+  
+  log: function (o) {
+	if (typeof(o) == 'object') {
+	  for (property in o) {
+		cc.log(property + ' = ' + o[property]);  
+	  }
+	} else {
+	  cc.log(o);	
+	}
+	
+  }
   
 }
