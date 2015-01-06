@@ -101,7 +101,7 @@ var Map = cc.Scene.extend({
 	moveMapDelta: function (delta, anim, speed) {
 		delta = this.checkBorder(this.map.getPosition(), delta);
 		if (anim == true) {
-			var speed = (typeof(speed) == 'undefined')?300:speed;
+			var speed = (typeof(speed) == 'undefined')?600:speed;
 			var d = app.getDistance(this.map.getPosition().x, this.map.getPosition().y, this.map.getPosition().x + delta.x, this.map.getPosition().y + delta.y);
 			var t = d/speed;
 			this.map.runAction(
@@ -148,7 +148,7 @@ var Map = cc.Scene.extend({
 	},
 	
 	// Передвинутся к игровой позиции
-	moveMapPos: function (pos) {
+	moveMapPos: function (pos, anim) {
 	  var r = 150;	
 	  var p0 = this.gamePos(pos + 1);
 	  //this.logP(p0);
@@ -161,8 +161,12 @@ var Map = cc.Scene.extend({
 
 	  var p1 = this.convertNormalPosToMap(p);
 	  //this.logP(p1);
-		  
-	  this.moveMap(p1, true);	
+	  
+	  if (this.isVisible(this.convertNormalPosToMap(p0)) !== false) {
+		this.moveMap(p1, (typeof(anim) == 'undefined')?true:anim);  
+	  } else {
+		//cc.log('VISIBLE!!!');  
+	  }
 	},
 
 
@@ -186,6 +190,22 @@ var Map = cc.Scene.extend({
 	  return delta;
 	},
 	
+	isVisible: function (pos) {
+		if ((pos.y) < -(this.map.getContentSize().height - cc.view.getVisibleSize().height)) {
+		  return false;	
+		}
+		if ((pos.y) > 0) {
+		  return false;	
+		}
+		if ((pos.x) < -(this.map.getContentSize().width - cc.view.getVisibleSize().width)) {
+		  return false;	
+		}
+		if ((pos.x) > 0) {
+		  return false;	
+		}
+		return true;
+	},
+	
 	gamePos: function (pos) {
 	  return this.gamePath[pos-1];	
 	},
@@ -203,6 +223,8 @@ var Map = cc.Scene.extend({
 	movePlayer: function (player, step, onSuccess) {
 		var p = this.players[player];
 		var prevStep = (p.step == undefined)?1:p.step;
+		this.moveMapPos(prevStep, false);
+		
 		p.step = step;
 		var pos = this.gamePos(step);
 
