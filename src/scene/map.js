@@ -162,22 +162,23 @@ var Map = cc.Scene.extend({
 	  var p1 = this.convertNormalPosToMap(p);
 	  //this.logP(p1);
 	  
-	  if (this.isVisible(this.convertNormalPosToMap(p0)) !== false) {
+	  if (this.isVisible(this.convertNormalPosToMap(p0)) == false) {
 		this.moveMap(p1, (typeof(anim) == 'undefined')?true:anim);  
 	  } else {
 		//cc.log('VISIBLE!!!');  
 	  }
+	  //*/
 	},
 
 
 	checkBorder: function (pos, delta) {
 		if ((pos.y + delta.y) < -(this.map.getContentSize().height - cc.view.getVisibleSize().height)) {
 			//delta.y = 0;
-		  delta.y = -(this.map.getContentSize().height - cc.view.getVisibleSize().height) - pos.y;
+			delta.y = -(this.map.getContentSize().height - cc.view.getVisibleSize().height) - pos.y;
 	  }
-	  if ((pos.y + delta.y) > 0) {
-		//delta.y = 0;
-		  delta.y = (-1)*pos.y;
+		if ((pos.y + delta.y) > 0) {
+			//delta.y = 0;
+			delta.y = (-1)*pos.y;
 	  }
 	  if ((pos.x + delta.x) < -(this.map.getContentSize().width - cc.view.getVisibleSize().width)) { 
  	    //delta.x = 0;
@@ -191,19 +192,16 @@ var Map = cc.Scene.extend({
 	},
 	
 	isVisible: function (pos) {
-		if ((pos.y) < -(this.map.getContentSize().height - cc.view.getVisibleSize().height)) {
-		  return false;	
+		if (
+			   (pos.x <= this.map.x)
+		    && (pos.x >= this.map.x - cc.view.getVisibleSize().width)
+		    && (pos.y <= this.map.y)
+		    && (pos.y >= this.map.y - cc.view.getVisibleSize().height)
+		   ) {
+		   return true;	
+		} else {
+		   return false;	
 		}
-		if ((pos.y) > 0) {
-		  return false;	
-		}
-		if ((pos.x) < -(this.map.getContentSize().width - cc.view.getVisibleSize().width)) {
-		  return false;	
-		}
-		if ((pos.x) > 0) {
-		  return false;	
-		}
-		return true;
 	},
 	
 	gamePos: function (pos) {
@@ -338,7 +336,7 @@ var Map = cc.Scene.extend({
       ]; 	
       playersImg.shuffle();
       
-      //this.moveMapPos(7);
+      this.moveMapPos(0);
       
       this.players = [];
       this.currentPlayer = 0;
@@ -357,7 +355,7 @@ var Map = cc.Scene.extend({
     		setTimeout(function () {
     			this.showNextTurn({
     				onTurn: function (steps) {
-    					this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps-1));
+    					this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps));
     					this.currentPlayer++;
     					if (this.currentPlayer > (this.players.length-1)) {
     						this.currentPlayer = 0;  
