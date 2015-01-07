@@ -355,7 +355,7 @@ var Map = cc.Scene.extend({
     		setTimeout(function () {
     			this.showNextTurn({
     				onTurn: function (steps) {
-    					this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps));
+    					this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + (steps-1));
     					this.currentPlayer++;
     					if (this.currentPlayer > (this.players.length-1)) {
     						this.currentPlayer = 0;  
@@ -534,7 +534,7 @@ var Map = cc.Scene.extend({
 		      }.bind(this), 100);
               setTimeout(function () {
             	clearInterval(numbersInterval);  
-            	numbers.n = getRandomInt(1, 12);
+            	numbers.n = getRandomInt(2, 12);
             	numbers.setTexture('res/numbers/' + numbers.n + '.png');
             	setTimeout(function () {
             		this.backMenu.attr({
