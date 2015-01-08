@@ -39,13 +39,13 @@ var Map = cc.Scene.extend({
 					y: p.y + d.y
 				});
 				if (app.debug && this.editMap) {
-				  if (typeof(this.path) == 'undefined') {
+					if (typeof(this.path) == 'undefined') {
 					  this.path = [];  
 				  }
 				  if (this.path.length >= 4 && app.getDistance(this.path[this.path.length-2], this.path[this.path.length-1], g.x, g.y) < 20) {
-					cc.log('Конец!');
-					cc.log(this.path);
-					this.editMap = false;
+					  cc.log('Конец!');
+					  cc.log(this.path);
+					  this.editMap = false;
 					cc.log(this.path);
 				  }
 				  this.path.push(g.x);
@@ -256,6 +256,8 @@ var Map = cc.Scene.extend({
 				// Проверяем финал игры
 				if (p.step == 119) {
 				  cc.log('ФИНАЛ ИГРЫ!!!');
+				  cc.audioEngine.playEffect('res/sound/up3.mp3');
+				  this.showFinal({});
 				  return true;
 				}
 				
@@ -267,10 +269,13 @@ var Map = cc.Scene.extend({
 				  
 				  if (transition.up) {
 					cc.log('Играем радостную музыку!');  
+					cc.audioEngine.playEffect('res/sound/up2.mp3');
 				  } else {
-					cc.log('Играем грустную музыку!');  
+					cc.log('Играем грустную музыку!');
+					cc.audioEngine.playEffect('res/sound/down.mp3');
 				  }
 				  p.step = transition.transition + 1;
+				  this.moveMapPos(transition.transition + 1);
 				  app.moveByPathConstantSpeed(
 				   [
 				    {
@@ -281,16 +286,16 @@ var Map = cc.Scene.extend({
 				      y: this.gamePos(transition.transition + 1).y
 				    }
 				   ], p, speed, function () {
-					   this.moveMapPos(transition.transition + 1);
+					   
 					   p.runAction(new cc.Sequence([
 						                             new cc.RotateTo(0.5, 180, 180),
 						                             new cc.RotateTo(0.5, 360, 360)
 						                             ]));
-					   
+
 					   setTimeout(function () {
-							this.showNextTurn({
-								onTurn: function (steps) {
-									var nextStep = this.players[this.currentPlayer].step + ((this.players[this.currentPlayer].step == 1)?(steps-1):steps);
+						   this.showNextTurn({
+							   onTurn: function (steps) {
+								   var nextStep = this.players[this.currentPlayer].step + ((this.players[this.currentPlayer].step == 1)?(steps-1):steps);
 									
 									this.movePlayer(this.currentPlayer, nextStep);
 									
@@ -332,48 +337,48 @@ var Map = cc.Scene.extend({
 					this.showNextTurn({
 						onTurn: function (steps) {
 							var nextStep = this.players[this.currentPlayer].step + ((this.players[this.currentPlayer].step == 1)?(steps-1):steps);
-							
+
 							this.movePlayer(this.currentPlayer, nextStep);
-							
+
 							//cc.log('repeat = ' + nextStep);
 							//cc.log(this.isRepeat(nextStep));
-							
+
 							if (this.isRepeat(nextStep) == false) {
 								this.currentPlayer++;
 								if (this.currentPlayer > (this.players.length-1)) {
 									this.currentPlayer = 0;  
 								}	
 							} else {
-							  cc.log('Повторный ход играем - радостную музыку!');	
+
 							}
-							
+
 						}.bind(this),
 						isRepeat: this.isRepeat(p.step) 
 					});		
 				}.bind(this), 1000);
-				
-			}
-				
-				
-				
+
+				}
+
+
+
 			}.bind(this), false, 
 			function (point) {
 				//cc.log(point.inex);
 				var m = this.convertMapPosToNormal(this.map.getPosition());
 				if (
-						   (point.x >= m.x)
-						   && (point.x <= m.x + cc.view.getVisibleSize().width)
-						   && (point.y >= m.y)
-						   && (point.y <= m.y + cc.view.getVisibleSize().height)
-					     ) {
-		                //cc.log('true');				  
-					  } else {
-						//cc.log('false');
-						this.moveMapPos(point.inex);
-     				  }	
-			  
+						(point.x >= m.x)
+						&& (point.x <= m.x + cc.view.getVisibleSize().width)
+						&& (point.y >= m.y)
+						&& (point.y <= m.y + cc.view.getVisibleSize().height)
+				) {
+					//cc.log('true');				  
+				} else {
+					//cc.log('false');
+					this.moveMapPos(point.inex);
+				}	
+
 			}.bind(this)
-		  );  
+			);  
 		} else {
 			if (this.findPlayerInStep(step).length > 1) {
 				p.runAction(new cc.Sequence([
@@ -436,6 +441,8 @@ var Map = cc.Scene.extend({
 	players: [],
 	currentPlayer: 0,
 	game: function() {
+		this.drawLayer.removeAllChildren(true);
+		
 		var playersImg = [
 		                  'p1',
 		                  'p2',
@@ -483,7 +490,10 @@ var Map = cc.Scene.extend({
     					  if (this.currentPlayer > (this.players.length-1)) {
     						this.currentPlayer = 0;  
     					  }
-    					}  
+    					}
+    					
+    					
+    					
     				}.bind(this)
     			});	
     		}.bind(this), 1000);
@@ -615,6 +625,12 @@ var Map = cc.Scene.extend({
     
     showNextTurn: function (options) {
     	this.initMenu();
+    	
+    	if (options.isRepeat == true) {
+    		cc.log('Повторный ход играем - радостную музыку!');
+    		cc.audioEngine.playEffect('res/sound/up.mp3');	
+    	}
+    	
 
     	var line = new cc.LabelTTF(
        		  ((options.isRepeat == true)?'Повторный ход':'Ход') + ((this.players[this.currentPlayer].ai == true)?' компьютера':' игрока'),
@@ -679,7 +695,7 @@ var Map = cc.Scene.extend({
             	numbers.n = getRandomInt(2, 12);
             	//numbers.n = 0;
             	numbers.setTexture('res/numbers/' + numbers.n + '.png');
-            	numbers.n = 24;
+            	//numbers.n = 24;
             	setTimeout(function () {
             		this.backMenu.attr({
     		    	  visible: false
@@ -702,6 +718,49 @@ var Map = cc.Scene.extend({
     },
     
     showFinal: function (options) {
-      this.initMenu();	
+      this.initMenu();
+      var line = new cc.LabelTTF(
+       		  'Выиграл игрок',
+       		  'Times New Roman',
+   			  34
+   	  );
+      line.setPosition(this.backMenu.width/2, this.backMenu.height - 34);
+   	  line.setAnchorPoint(0.5, 1);
+   	  line.setColor(cc.color(0, 0, 0, 255));
+   	  this.backMenu.addChild(line);
+    	
+   	  this.currentPlayer--;
+	  if (this.currentPlayer < 0) {
+		this.currentPlayer = this.players.length-1;  
+	  }
+   	  
+   	  var playerImg = new cc.Sprite(this.players[this.currentPlayer].imgName);
+   	  playerImg.attr({
+   	    scale: 1.5	
+   	  });
+   	  playerImg.setPosition(this.backMenu.width/2, this.backMenu.height - 80);
+   	  playerImg.setAnchorPoint(0.5, 1);
+	  this.backMenu.addChild(playerImg);
+	  
+	  var award = new cc.Sprite('res/award.png');
+	  award.setPosition(this.backMenu.width/2, this.backMenu.height - 150);
+	  award.setAnchorPoint(0.5, 1);
+ 	  this.backMenu.addChild(award);
+	  
+	  var button = new ccui.ImageView();
+  	  button.setTouchEnabled(true);
+  	  button.loadTexture('res/menu-button-again.png');
+	  button.setPosition(this.backMenu.width/2, this.backMenu.height - 34 - 50 - 34 - 34 - 120 - 70);
+	  button.addTouchEventListener(function (sender, type) { 
+		  switch (type) {
+		    case ccui.Widget.TOUCH_ENDED: {
+		   	  this.game();
+		      break;
+		    }
+		    default:
+			  break;
+		  }
+	  }, this);
+	  this.backMenu.addChild(button);
     }
 });
