@@ -202,10 +202,10 @@ var Map = cc.Scene.extend({
 		   ) {
 		   return true;	
 		} else {
-		   return false;	
+			return false;	
 		}
 	},
-	
+
 	gamePos: function (pos) {
 	  return this.gamePath[pos-1];	
 	},
@@ -255,8 +255,8 @@ var Map = cc.Scene.extend({
 			app.moveByPathConstantSpeed(path, p, speed, function () {
 				// Проверяем финал игры
 				if (p.step == 119) {
-				  cc.log('ФИНАЛ ИГРЫ!!!');
-				  cc.audioEngine.playEffect('res/sound/up3.mp3');
+					cc.log('ФИНАЛ ИГРЫ!!!');
+					cc.audioEngine.playEffect('res/sound/up3.mp3');
 				  this.showFinal({});
 				  return true;
 				}
@@ -293,6 +293,7 @@ var Map = cc.Scene.extend({
 						                             ]));
 
 					   setTimeout(function () {
+						   this.moveMapPos(this.players[this.currentPlayer].step, false);
 						   this.showNextTurn({
 							   onTurn: function (steps) {
 								   var nextStep = this.players[this.currentPlayer].step + ((this.players[this.currentPlayer].step == 1)?(steps-1):steps);
@@ -306,7 +307,8 @@ var Map = cc.Scene.extend({
 										this.currentPlayer++;
 										if (this.currentPlayer > (this.players.length-1)) {
 											this.currentPlayer = 0;  
-										}	
+										}
+										
 									}
 									
 								}.bind(this),
@@ -334,6 +336,7 @@ var Map = cc.Scene.extend({
 					                             ]));
 				}
 				setTimeout(function () {
+					this.moveMapPos(this.players[this.currentPlayer].step, false);
 					this.showNextTurn({
 						onTurn: function (steps) {
 							var nextStep = this.players[this.currentPlayer].step + ((this.players[this.currentPlayer].step == 1)?(steps-1):steps);
