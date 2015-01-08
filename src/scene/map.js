@@ -40,7 +40,7 @@ var Map = cc.Scene.extend({
 				});
 				if (app.debug && this.editMap) {
 				  if (typeof(this.path) == 'undefined') {
-					this.path = [];  
+					  this.path = [];  
 				  }
 				  if (this.path.length >= 4 && app.getDistance(this.path[this.path.length-2], this.path[this.path.length-1], g.x, g.y) < 20) {
 					cc.log('Конец!');
@@ -51,12 +51,12 @@ var Map = cc.Scene.extend({
 				  this.path.push(g.x);
 				  this.path.push(g.y);
 				  if (this.path.length >= 4) {
-					app.drawPath(this.drawLayer, app.preparePathPoints([this.path[this.path.length-4], this.path[this.path.length-3],this.path[this.path.length-2], this.path[this.path.length-1]]));  
+					  app.drawPath(this.drawLayer, app.preparePathPoints([this.path[this.path.length-4], this.path[this.path.length-3],this.path[this.path.length-2], this.path[this.path.length-1]]));  
 				  }
 				} else {
-				  cc.log('simple click');
-				  //this.moveMapPos(17);
-				  /*this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + getRandomInt(2, 12));
+					cc.log('simple click');
+					//this.moveMapPos(17);
+					/*this.movePlayer(this.currentPlayer, this.players[this.currentPlayer].step + getRandomInt(2, 12));
 				  this.currentPlayer++;
 				  if (this.currentPlayer > (this.players.length-1)) {
 					  this.currentPlayer = 0;  
@@ -66,17 +66,18 @@ var Map = cc.Scene.extend({
 			  this.TouchMoved = false;
 		  }.bind(this),
 	  }, this);
-	  
-	  
+
+
 	  this.drawLayer = new cc.Layer();
 	  this.addChild(this.drawLayer);
 
-	  
-	  
+
+
 	  cc.loader.loadJson('res/game.json', function(error, data){
 		  //cc.log(data.path);
 		  this.gamePath = app.preparePathPoints(data.path);
 		  this.gameRepeat = data.repeat;
+		  this.gameTransition = data.transition;
 		  for (var i = 0; i < this.gamePath.length; i++) {
 			 this.gamePath[i].inex = i; 
 		  }
@@ -110,10 +111,10 @@ var Map = cc.Scene.extend({
 				  cc.p(
 					this.map.getPosition().x + delta.x,
 					this.map.getPosition().y + delta.y
-			      )
+				  )
 			   )
 			);
-			
+
 			this.drawLayer.runAction(
 					new cc.MoveTo(t, 
 							cc.p(
@@ -147,14 +148,14 @@ var Map = cc.Scene.extend({
 	 });	
 	 this.moveMapDelta(delta, anim, speed);
 	},
-	
+
 	// Передвинутся к игровой позиции
 	moveMapPos: function (pos, anim) {
 	  var r = 150;	
 	  var p0 = this.gamePos(pos + 1);
 	  //this.logP(p0);
 	  //this.addDot(p0);
-	  
+
 	  var p = cc.p({
 		  x: p0.x - r,
 		  y: p0.y - r
@@ -162,7 +163,7 @@ var Map = cc.Scene.extend({
 
 	  var p1 = this.convertNormalPosToMap(p);
 	  //this.logP(p1);
-	  
+
 	  if (this.isVisible(this.convertNormalPosToMap(p0)) == false) {
 		  this.moveMap(p1, (typeof(anim) == 'undefined')?true:anim);  
 	  } else {
@@ -224,7 +225,15 @@ var Map = cc.Scene.extend({
 		var prevStep = (p.step == undefined)?1:p.step;
 		this.moveMapPos(prevStep, false);
 		
+		this.moveMapPos(prevStep - 1);
+		
 		p.step = step;
+		
+		if (p.step > 119) {
+			p.step = 119;
+			step = 119;
+		}
+		
 		var pos = this.gamePos(step);
 
 		var speed = 300;	
@@ -244,6 +253,68 @@ var Map = cc.Scene.extend({
 		
 		if (path.length > 1) {
 			app.moveByPathConstantSpeed(path, p, speed, function () {
+				// Проверяем финал игры
+				if (p.step == 119) {
+				  cc.log('ФИНАЛ ИГРЫ!!!');
+				  return true;
+				}
+				
+				
+				// Проверяем игровое переходы
+				var transition = this.getTransition(step);
+				if (transition !== false) {
+				  app.log(transition);
+				  
+				  if (transition.up) {
+					cc.log('Играем радостную музыку!');  
+				  } else {
+					cc.log('Играем грустную музыку!');  
+				  }
+				  p.step = transition.transition + 1;
+				  app.moveByPathConstantSpeed(
+				   [
+				    {
+					  x: p.x,
+					  y: p.y
+				    }, {
+				      x: this.gamePos(transition.transition + 1).x,
+				      y: this.gamePos(transition.transition + 1).y
+				    }
+				   ], p, speed, function () {
+					   this.moveMapPos(transition.transition + 1);
+					   p.runAction(new cc.Sequence([
+						                             new cc.RotateTo(0.5, 180, 180),
+						                             new cc.RotateTo(0.5, 360, 360)
+						                             ]));
+					   
+					   setTimeout(function () {
+							this.showNextTurn({
+								onTurn: function (steps) {
+									var nextStep = this.players[this.currentPlayer].step + ((this.players[this.currentPlayer].step == 1)?(steps-1):steps);
+									
+									this.movePlayer(this.currentPlayer, nextStep);
+									
+									//cc.log('repeat = ' + nextStep);
+									//cc.log(this.isRepeat(nextStep));
+									
+									if (this.isRepeat(nextStep) == false) {
+										this.currentPlayer++;
+										if (this.currentPlayer > (this.players.length-1)) {
+											this.currentPlayer = 0;  
+										}	
+									}
+									
+								}.bind(this),
+								isRepeat: this.isRepeat(p.step) 
+							});		
+						}.bind(this), 2000);
+					   
+					   
+					   
+				   }.bind(this)
+				  );
+				 // this.movePlayer(player, transition.transition, {});
+				} else {
 				if (this.findPlayerInStep(step).length > 1) {
 					
 				    p.runAction(new cc.Sequence([
@@ -272,12 +343,19 @@ var Map = cc.Scene.extend({
 								if (this.currentPlayer > (this.players.length-1)) {
 									this.currentPlayer = 0;  
 								}	
+							} else {
+							  cc.log('Повторный ход играем - радостную музыку!');	
 							}
 							
 						}.bind(this),
 						isRepeat: this.isRepeat(p.step) 
 					});		
 				}.bind(this), 1000);
+				
+			}
+				
+				
+				
 			}.bind(this), false, 
 			function (point) {
 				//cc.log(point.inex);
@@ -319,6 +397,19 @@ var Map = cc.Scene.extend({
         }		  
 	  }	
 	  return false;	
+	},
+	
+	
+	getTransition: function (s) {
+		for (var i = 0; i < this.gameTransition.length; i++) {
+	        if (this.gameTransition[i][0] == s) {
+	          return {
+	        	transition: this.gameTransition[i][1],
+	        	up: ((this.gameTransition[i][1] < this.gameTransition[i][0])?false: true)  
+	          };	
+	        }		  
+		}	
+        return false;
 	},
 	
 	convertMapPosToNormal: function (p) {
@@ -586,8 +677,9 @@ var Map = cc.Scene.extend({
               setTimeout(function () {
             	clearInterval(numbersInterval);  
             	numbers.n = getRandomInt(2, 12);
-            	//numbers.n = 7;
+            	//numbers.n = 0;
             	numbers.setTexture('res/numbers/' + numbers.n + '.png');
+            	numbers.n = 24;
             	setTimeout(function () {
             		this.backMenu.attr({
     		    	  visible: false
