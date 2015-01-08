@@ -42,8 +42,8 @@ var Map = cc.Scene.extend({
 					if (typeof(this.path) == 'undefined') {
 					  this.path = [];  
 				  }
-				  if (this.path.length >= 4 && app.getDistance(this.path[this.path.length-2], this.path[this.path.length-1], g.x, g.y) < 20) {
-					  cc.log('Конец!');
+					if (this.path.length >= 4 && app.getDistance(this.path[this.path.length-2], this.path[this.path.length-1], g.x, g.y) < 20) {
+						cc.log('Конец!');
 					  cc.log(this.path);
 					  this.editMap = false;
 					cc.log(this.path);
@@ -95,8 +95,8 @@ var Map = cc.Scene.extend({
 	  dot.drawDot(p, 10, cc.color(242, 120, 14, 255));
 	},
 	logP: function (p) {
-	  cc.log('x = ' + p.x);
-	  cc.log('y = ' + p.y);
+		cc.log('x = ' + p.x);
+		cc.log('y = ' + p.y);
 	},
 	
 	// Сдвинуть карту на смещение delta
@@ -530,9 +530,9 @@ var Map = cc.Scene.extend({
       this.initMenu();	
       
       var line = new cc.LabelTTF(
-    		  'Путешествуйте вокруг света.',
+    		  'Trip around the world.',
     		  'Times New Roman',
-			  34
+			  30
 	  );
       line.setPosition(this.backMenu.width/2, this.backMenu.height - 34);
 	  line.setAnchorPoint(0.5, 1);
@@ -540,7 +540,7 @@ var Map = cc.Scene.extend({
 	  this.backMenu.addChild(line);
 	  
 	  var line = new cc.LabelTTF(
-    		  'В игре могут участвовать от 1 до 6 игроков.',
+    		  'You must first complete the journey.',
     		  'Times New Roman',
 			  24
 	  );
@@ -550,7 +550,7 @@ var Map = cc.Scene.extend({
 	  this.backMenu.addChild(line);
 	  
 	  var line = new cc.LabelTTF(
-			  'Побеждает тот игрок, который первый закончит',
+			  'Play can be from 1 to 6 players.',
     		  'Times New Roman',
 			  24
 	  );
@@ -560,7 +560,7 @@ var Map = cc.Scene.extend({
 	  this.backMenu.addChild(line);
 
 	  var line = new cc.LabelTTF(
-			  'путишествие! Удачи!',
+			  'Good Luck!',
 			  'Times New Roman',
 			  24
 	  );
@@ -571,7 +571,7 @@ var Map = cc.Scene.extend({
 
 
 	  this.countPlayersLine = new cc.LabelTTF(
-			  'Игроков 1',
+			  'Players 1',
 			  'Times New Roman',
 			  30
 	  );
@@ -596,7 +596,7 @@ var Map = cc.Scene.extend({
 			  var slider = sender;
 			  var percent = slider.getPercent();
 			  this.countPlayers = Math.round(percent/(100/5)) + 1;
-			  this.countPlayersLine.setString("Игроков " + this.countPlayers);
+			  this.countPlayersLine.setString("Players " + this.countPlayers);
 			  break;
 		  default:
 			  break;
@@ -636,7 +636,7 @@ var Map = cc.Scene.extend({
     	
 
     	var line = new cc.LabelTTF(
-       		  ((options.isRepeat == true)?'Повторный ход':'Ход') + ((this.players[this.currentPlayer].ai == true)?' компьютера':' игрока'),
+    			((this.players[this.currentPlayer].ai == true)?'Computer ':'Player ') + ((options.isRepeat == true)?'extra turn':'turn'),
        		  'Times New Roman',
    			  34
    	    );
@@ -723,7 +723,7 @@ var Map = cc.Scene.extend({
     showFinal: function (options) {
       this.initMenu();
       var line = new cc.LabelTTF(
-       		  'Выиграл игрок',
+       		  'Won player',
        		  'Times New Roman',
    			  34
    	  );
