@@ -687,6 +687,9 @@ var Map = cc.Scene.extend({
 	    button.addTouchEventListener(function (sender, type) { 
 		  switch (type) {
 		    case ccui.Widget.TOUCH_ENDED: {
+		      button.attr({
+		    	visible: false  
+		      });	
 		   	  var numbersInterval = setIntervalG(function () {
 		     	      //numbers.n = getRandomInt(1, 12);
 		     	      numbers.n++;
