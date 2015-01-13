@@ -40,8 +40,8 @@ var Map = cc.Scene.extend({
 				});
 				if (app.debug && this.editMap) {
 					if (typeof(this.path) == 'undefined') {
-					  this.path = [];  
-				  }
+						this.path = [];  
+					}
 					if (this.path.length >= 4 && app.getDistance(this.path[this.path.length-2], this.path[this.path.length-1], g.x, g.y) < 20) {
 						cc.log('Конец!');
 					  cc.log(this.path);
@@ -90,15 +90,15 @@ var Map = cc.Scene.extend({
 	},
 	
 	addDot: function (p) {
-	  var dot = new cc.DrawNode();
-	  this.drawLayer.addChild(dot);
-	  dot.drawDot(p, 10, cc.color(242, 120, 14, 255));
+		var dot = new cc.DrawNode();
+		this.drawLayer.addChild(dot);
+		dot.drawDot(p, 10, cc.color(242, 120, 14, 255));
 	},
 	logP: function (p) {
 		cc.log('x = ' + p.x);
 		cc.log('y = ' + p.y);
 	},
-	
+
 	// Сдвинуть карту на смещение delta
 	moveMapDelta: function (delta, anim, speed) {
 		delta = this.checkBorder(this.map.getPosition(), delta);
@@ -137,9 +137,9 @@ var Map = cc.Scene.extend({
 					)		
 			);	
 		}
-		
+
 	},
-	
+
 	// Сдвинуть карту к координатам в системе кординат краты
 	moveMap: function (pos, anim, speed) {
 	 var delta = cc.p({
@@ -507,10 +507,11 @@ var Map = cc.Scene.extend({
     },
     
     initMenu: function () {
-      	
       if (typeof(this.backMenu) == 'undefined') {
     	  this.backMenu = new cc.Sprite('res/menu-board.png');
           this.backMenu.attr({
+        	  visible: true,
+        	  scale  : 1,
         	  x: (cc.view.getVisibleSize().width)/2,
         	  y: (cc.view.getVisibleSize().height)/2,
         	  anchorX: 0.5,
@@ -519,9 +520,15 @@ var Map = cc.Scene.extend({
           });
           this.addChild(this.backMenu); 
       } else {
-    	this.backMenu.attr({
-    	   visible: true
-    	}); 
+          this.backMenu.attr({
+        	  visible: true,
+        	  scale  : 1,
+        	  x: (cc.view.getVisibleSize().width)/2,
+        	  y: (cc.view.getVisibleSize().height)/2,
+        	  anchorX: 0.5,
+        	  anchorY: 0.5,
+        	  opacity: 190
+          });
       }
       this.backMenu.removeAllChildren(true);
     },
@@ -661,6 +668,15 @@ var Map = cc.Scene.extend({
    	    
         //    
    	    if (this.players[this.currentPlayer].ai == true) {
+   	    	this.backMenu.attr({
+	        	  visible: true,
+	        	  scale  : 0.5,
+	        	  x: cc.view.getVisibleSize().width,
+	        	  y: cc.view.getVisibleSize().height,
+	        	  anchorX: 1,
+	        	  anchorY: 1,
+	        	  opacity: 190
+	        });
    	    	var numbersInterval = setIntervalG(function () {
       	          numbers.n++;
 	     	      if (numbers.n > 12) numbers.n = 1;
@@ -687,6 +703,18 @@ var Map = cc.Scene.extend({
 	    button.addTouchEventListener(function (sender, type) { 
 		  switch (type) {
 		    case ccui.Widget.TOUCH_ENDED: {
+		      this.backMenu.attr({
+		        	  visible: true,
+		        	  scale  : 0.5,
+		        	  x: cc.view.getVisibleSize().width,
+		        	  y: cc.view.getVisibleSize().height,
+		        	  anchorX: 1,
+		        	  anchorY: 1,
+		        	  opacity: 190
+		      });
+ 	
+		    	
+		    	
 		      button.attr({
 		    	visible: false  
 		      });	
